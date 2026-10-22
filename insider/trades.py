@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import Optional, Dict, Any, List
 import time
-import requests
+import numpy as np
 import pandas as pd
+import requests
 import xml.etree.ElementTree as ET
 
 
@@ -390,3 +391,27 @@ def net_insider_flow(df: pd.DataFrame, days: int = 90) -> float:
     buys = float(d.loc[d["transaction_code"] == "P", "value"].fillna(0).sum())
     sells = float(d.loc[d["transaction_code"] == "S", "value"].fillna(0).sum())
     return buys - sells
+
+
+def trades_to_records(df: pd.DataFrame) -> list[dict[str, Any]]:
+    """
+    Convert a trades DataFrame to a list of JSON-serializable records for API responses.
+
+    Datetime columns are converted to ISO 8601 strings; NaN/NaT become null.
+    Intended for use with insider_trades_df or collapse_form4_trades output.
+
+    Args:
+        df: DataFrame with insider trade columns (e.g. filing_date, transaction_date, etc.).
+
+    Returns:
+        List of dicts suitable for json.dumps or FastAPI JSONResponse.
+    """
+    if df.empty:
+        return []
+    df = df.copy()
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].dt.tz_localize(None).astype(object).where(df[col].notna(), None)
+            df[col] = df[col].apply(lambda x: x.isoformat() if hasattr(x, "isoformat") else x)
+    # JSON-friendly: NaN/NaT -> None
+    return df.replace({np.nan: None}).to_dict(orient="records")

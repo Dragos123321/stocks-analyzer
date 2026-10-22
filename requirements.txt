@@ -1,0 +1,107 @@
+aiofiles==25.1.0
+annotated-doc==0.0.4
+annotated-types==0.7.0
+anyio==4.12.1
+asttokens==3.0.0
+beautifulsoup4==4.14.3
+Bottleneck @ file:///C:/miniconda3/conda-bld/bottleneck_1761938102004/work
+certifi==2026.1.4
+cffi==2.0.0
+charset-normalizer==3.4.4
+click==8.3.1
+colorama==0.4.6
+comm==0.2.2
+contourpy @ file:///C:/miniconda3/conda-bld/contourpy_1763643940481/work
+curl_cffi==0.13.0
+cycler @ file:///C:/Users/task_176606794865467/croot/cycler_1766068048113/work
+debugpy==1.8.12
+decorator==5.2.1
+edgartools==5.15.1
+executing==2.2.0
+fastapi==0.135.1
+filelock==3.20.3
+finnhub-python==2.4.27
+fonttools @ file:///C:/miniconda3/conda-bld/fonttools_1765445219380/work
+frozendict==2.4.7
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+httpxthrottlecache==0.3.0
+humanize==4.15.0
+idna==3.11
+ipykernel==6.29.5
+ipython==9.0.1
+ipython_pygments_lexers==1.1.1
+jedi==0.19.2
+Jinja2==3.1.6
+jupyter_client==8.6.3
+jupyter_core==5.7.2
+kiwisolver @ file:///C:/miniconda3/conda-bld/kiwisolver_1764159357446/work
+llvmlite==0.44.0
+lxml==6.0.2
+markdown-it-py==4.0.0
+MarkupSafe==3.0.3
+matplotlib==3.10.8
+matplotlib-inline==0.1.7
+mdurl==0.1.2
+mkl-service==2.5.2
+mkl_fft @ file:///C:/miniconda3/conda-bld/mkl_fft_1761592916781/work
+mkl_random @ file:///C:/miniconda3/conda-bld/mkl_random_1761593076691/work
+multitasking==0.0.12
+nest-asyncio==1.6.0
+numba==0.61.2
+numexpr @ file:///C:/miniconda3/conda-bld/numexpr_1762165724132/work
+numpy==2.2.6
+orjson==3.11.7
+packaging==24.2
+pandas @ file:///C:/miniconda3/conda-bld/pandas_1762332401545/work/dist/pandas-2.3.3-cp313-cp313-win_amd64.whl#sha256=9d93408ded21463dc4a0cce0d61428cd756d3f130f78ca53bfb6d1c81fedaa66
+pandas-ta==0.4.71b0
+parso==0.8.4
+peewee==3.19.0
+pillow @ file:///C:/miniconda3/conda-bld/pillow_1762528255883/work
+platformdirs==4.3.6
+prompt_toolkit==3.0.50
+protobuf==6.33.5
+psycopg2-binary==2.9.10
+psutil==7.0.0
+pure_eval==0.2.3
+pyarrow==23.0.0
+pycparser==3.0
+pydantic==2.12.5
+pydantic_core==2.41.5
+Pygments==2.19.1
+pyparsing @ file:///C:/miniconda3/conda-bld/pyparsing_1763974011379/work
+PyQt6==6.9.1
+PyQt6_sip @ file:///C:/miniconda3/conda-bld/pyqt-split_1757511039072/work/pyqt_sip
+pyrate-limiter==3.9.0
+python-dateutil==2.9.0.post0
+pytz @ file:///C:/b/abs_f8wdzeix0n/croot/pytz_1752135878094/work
+pywin32==308
+pyzmq==26.2.1
+rank-bm25==0.2.2
+RapidFuzz==3.14.3
+requests==2.32.5
+rich==14.3.2
+setuptools==80.10.2
+sip @ file:///C:/b/abs_f6ow8vlbb7/croot/sip_1756224172742/work
+six==1.17.0
+soupsieve==2.8.3
+stack-data==0.6.3
+stamina==25.2.0
+starlette==0.52.1
+tabulate==0.9.0
+tenacity==9.1.4
+textdistance==4.6.3
+tornado==6.4.2
+tqdm==4.67.3
+traitlets==5.14.3
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+tzdata @ file:///home/task_176829656558347/croot/python-tzdata_1768296637279/work
+Unidecode==1.4.0
+urllib3==2.6.3
+uvicorn==0.41.0
+wcwidth==0.2.13
+websockets==16.0
+wheel==0.46.3
+yfinance==1.1.0

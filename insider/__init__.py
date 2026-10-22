@@ -1,4 +1,4 @@
-"""SEC Form 4 insider trading fetch and analysis."""
+"""SEC Form 4 insider trading fetch, analysis, and FastAPI."""
 from .trades import (
     SEC_HEADERS,
     ticker_to_cik,
@@ -6,7 +6,9 @@ from .trades import (
     filter_open_market,
     collapse_form4_trades,
     net_insider_flow,
+    trades_to_records,
 )
+from .api import app
 
 __all__ = [
     "SEC_HEADERS",
@@ -15,4 +17,6 @@ __all__ = [
     "filter_open_market",
     "collapse_form4_trades",
     "net_insider_flow",
+    "trades_to_records",
+    "app",
 ]

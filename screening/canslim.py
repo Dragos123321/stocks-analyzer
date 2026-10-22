@@ -1,11 +1,22 @@
-"""CANSLIM-style ranking: fetch yfinance fields and price data, score and rank stocks."""
+"""CANSLIM-style ranking: use DB when available, else fetch from yfinance."""
 from __future__ import annotations
+
+from datetime import date, timedelta
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from .ratio_ranking import get_tickers_from_csv
+from .ratio_ranking import get_tickers_for_universe, get_tickers_from_csv
+
+try:
+    from log_config import get_logger
+except ImportError:
+    import logging
+    def get_logger(name: str):
+        return logging.getLogger(name)
+
+_log = get_logger(__name__)
 
 
 def _minmax_0_100(s: pd.Series) -> pd.Series:
@@ -155,12 +166,15 @@ def fetch_prices_for_rs(
 def rank_stocks_by_canslim(
     csv_path: str = "sp500_symbols.csv",
     *,
+    universe_slug: str | None = None,
+    tickers: list[str] | None = None,
     limit: int | None = None,
     weights: dict[str, float] | None = None,
     benchmark: str = "SPY",
+    csv_dir: str | None = None,
 ) -> pd.DataFrame:
     """
-    Rank stocks by a CANSLIM-style composite score from a CSV ticker universe.
+    Rank stocks by a CANSLIM-style composite score from a ticker universe.
 
     Scores each ticker on C (earnings growth), A (annual growth/ROE), N (near high),
     S (volume surge), L (relative strength), I (institutional), M (market trend).
@@ -168,24 +182,61 @@ def rank_stocks_by_canslim(
     sorted by total score descending.
 
     Args:
-        csv_path: Path to CSV with 'Symbol' column (default "sp500_symbols.csv").
+        csv_path: Path to CSV with 'Symbol' column (used if universe_slug/tickers not set).
+        universe_slug: e.g. 'sp500', 'nasdaq'; tickers from DB then CSV fallback.
+        tickers: If provided, use this list instead of loading from CSV/universe.
         limit: If set, only evaluate the first this many tickers.
         weights: Optional dict of letter -> weight (e.g. {"C": 20, "A": 15, ...}).
-                 Weights are normalized to sum to 1. Default: C=20, A=15, N=15, S=10, L=25, I=10, M=5.
         benchmark: Ticker for market trend and relative strength (default "SPY").
+        csv_dir: Optional directory for CSV when using universe_slug fallback.
 
     Returns:
         DataFrame with columns: ticker, C, A, N, S, L, I, M, coverage_count,
         score_core, score. Sorted by score descending.
     """
-    tickers = get_tickers_from_csv(csv_path)
+    if tickers is not None:
+        tickers = list(tickers)
+    elif universe_slug:
+        tickers = get_tickers_for_universe(universe_slug, csv_dir=csv_dir)
+    else:
+        tickers = get_tickers_from_csv(csv_path)
     if limit:
         tickers = tickers[:limit]
 
     m_ok = market_is_up(benchmark)
 
-    info_df = fetch_info_fields(tickers)
-    prices = fetch_prices_for_rs(tickers, benchmark=benchmark, period="1y")
+    # Try DB first when we have a universe (needs CANSLIM columns in ticker_snapshot)
+    info_df = None
+    prices = None
+    if universe_slug:
+        try:
+            from db.snapshots import get_canslim_snapshots_for_universe, get_close_prices_for_universe
+            info_df = get_canslim_snapshots_for_universe(universe_slug)
+            if not info_df.empty and "returnOnEquity" in info_df.columns:
+                end_d = date.today()
+                start_d = end_d - timedelta(days=400)
+                prices = get_close_prices_for_universe(universe_slug, start_d, end_d)
+                if not prices.empty and len(prices) >= 130:
+                    spy_series = yf.download(
+                        benchmark, start=start_d, end=end_d, progress=False,
+                        auto_adjust=True, group_by="column",
+                    )
+                    if not spy_series.empty and "Close" in spy_series.columns:
+                        spy_close = spy_series["Close"]
+                        if isinstance(spy_close, pd.DataFrame):
+                            spy_close = spy_close.iloc[:, 0]
+                        spy_aligned = spy_close.reindex(prices.index)
+                        prices[benchmark] = spy_aligned.values
+                    if benchmark in prices.columns:
+                        _log.info("CANSLIM from DB: universe=%s tickers=%d", universe_slug, len(info_df))
+        except Exception as e:
+            _log.warning("CANSLIM from DB failed (%s), falling back to yfinance", e)
+            info_df = None
+            prices = None
+
+    if info_df is None or info_df.empty or prices is None or prices.empty or benchmark not in prices.columns:
+        info_df = fetch_info_fields(tickers)
+        prices = fetch_prices_for_rs(tickers, benchmark=benchmark, period="1y")
 
     if benchmark in prices.columns:
         spy = prices[benchmark].dropna()

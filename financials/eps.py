@@ -1,75 +1,63 @@
-"""Diluted EPS: annual and quarterly from yfinance, with fallback formula when not reported."""
+"""Diluted EPS: annual and quarterly. Use DB when available, else yfinance."""
+from __future__ import annotations
+
 import pandas as pd
 import yfinance as yf
+
+
+def _annual_eps_from_db(ticker_symbol: str, year: int) -> float | None:
+    try:
+        from db.snapshots import get_annual_eps_from_db
+        return get_annual_eps_from_db(ticker_symbol, year)
+    except Exception:
+        return None
 
 
 def annual_eps(ticker_symbol: str, year: int) -> float | None:
     """
     Return diluted EPS for the given ticker and fiscal year.
-
-    Uses the reported Diluted EPS from the ticker data when present. Otherwise
-    computes using:
-        Diluted EPS = (Net Income - Preferred Dividends)
-                      / (Weighted Avg. Common Shares + Dilutive Potential Shares)
-
-    Args:
-        ticker_symbol: Stock ticker symbol (e.g. "AAPL", "NVDA").
-        year: Fiscal year (e.g. 2024).
-
-    Returns:
-        Diluted EPS for that year, or None if data is missing or unavailable.
+    Uses DB (eps_annual) when available, else yfinance.
     """
+    val = _annual_eps_from_db(ticker_symbol, year)
+    if val is not None:
+        return val
     t = yf.Ticker(ticker_symbol)
     income_stmt = t.income_stmt
     if income_stmt is None or income_stmt.empty:
         return None
-
-    # Column for the requested fiscal year
     year_dates = [d for d in income_stmt.columns if getattr(d, "year", None) == year]
     if not year_dates:
         return None
     col = year_dates[0]
-
     return _compute_diluted_eps(income_stmt, col)
+
+
+def _quarterly_eps_from_db(ticker_symbol: str, year: int, quarter: str) -> float | None:
+    try:
+        from db.snapshots import get_quarterly_eps_by_calendar_from_db
+        return get_quarterly_eps_by_calendar_from_db(ticker_symbol, year, quarter)
+    except Exception:
+        return None
 
 
 def quarterly_eps(ticker_symbol: str, year: int, quarter: str) -> float | None:
     """
     Return diluted EPS for the given ticker, fiscal year, and quarter.
-
-    The *year* and *quarter* are interpreted on a CALENDAR basis:
-      - Q1: months 1–3
-      - Q2: months 4–6
-      - Q3: months 7–9
-      - Q4: months 10–12
-
-    We pick the latest reported quarter-end date within that (year, quarter)
-    window, so it tolerates companies reporting a few days before/after
-    the exact month-end. Uses reported Diluted EPS when present; otherwise
-    uses (Net Income - Preferred Dividends) / (Weighted Avg. Common + Dilutive).
-
-    Args:
-        ticker_symbol: Stock ticker symbol (e.g. "AAPL").
-        year: Calendar year (e.g. 2024).
-        quarter: Quarter label; must be "Q1", "Q2", "Q3", or "Q4".
-
-    Returns:
-        Diluted EPS for that quarter, or None if data is missing or invalid.
+    Uses DB (eps_quarterly) when available, else yfinance.
     """
     q = quarter.upper()
     if q not in ("Q1", "Q2", "Q3", "Q4"):
         return None
+    val = _quarterly_eps_from_db(ticker_symbol, year, q)
+    if val is not None:
+        return val
     t = yf.Ticker(ticker_symbol)
     qis = t.quarterly_income_stmt
     if qis is None or qis.empty:
         return None
-
-    # Resolve the correct column for the requested fiscal year & quarter,
-    # taking into account companies with non‑calendar fiscal years.
     col = _find_quarter_column(qis, fiscal_year=year, quarter_label=q)
     if col is None:
         return None
-
     return _compute_diluted_eps(qis, col)
 
 
